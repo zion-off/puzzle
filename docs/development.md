@@ -59,7 +59,7 @@ once real people hold pieces, never change `SIGNING_KEY`, the picture, the grid,
 `PZL | version | puzzle | piece | seq | owners | total | secret | events[] | ed25519 signature`.
 the signature covers the payload plus a hash of the visible pixels (lsbs zeroed), so neither the history nor the image can be edited.
 
-**wear** (`src/shared/wear.ts`) is applied to the real pixels before embedding. handling wear on every take or redeem: edge grime, edge whitening, scuffs, creases, fraying, chips (about 10 hand-offs = well worn). age wear on return or gift-wrap, scaled by days since the piece left: sepia fade (half-life 1 year), stains, peels. frayed pixels can't hold data, so heavily used pieces remember less.
+**wear** (`src/shared/wear.ts`) is applied to the real pixels before embedding. handling wear on every take or redeem: edge rubbing weighted by convexity (knob tips, corners), slight tip softening, matte scuffs, edge peels, occasional crease cracks (about 10 hand-offs = well worn). age wear on return or gift-wrap, scaled by days since the piece left: yellowing, stains, peels. softened tip pixels lose opacity and can't hold data, so heavily used pieces remember less.
 
 **shapes** come from `PUZZLE.seed` in `src/shared/config.ts`; the client draws the whole board from `master.jpg` and the seed, overlaying the stored image of any piece that has been passed around.
 
