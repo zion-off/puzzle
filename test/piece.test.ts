@@ -42,7 +42,7 @@ test('a piece survives a full take → wear → re-sign → read cycle', async (
 
   const read = await readPiece(fresh.png, keys);
   assert.ok(!('error' in read));
-  applyWear(read.rgba, read.width, read.height, 1);
+  applyWear(read.rgba, read.width, read.height, { handling: 1, days: 30 }, pieceMask(42));
   const taken = await writePiece(read, { ...read.payload, seq: 1, owners: 1, total: 1, events: [{ type: EVENT.take, at: 1_800_000_000 }] }, keys);
 
   const again = await readPiece(taken.png, keys);

@@ -40,7 +40,7 @@ const INFO: [string, string][] = [
   ['Give it away.', 'Wrap the piece as a gift and send the link. Whoever opens it first gets the piece. Your old file becomes a keepsake.'],
   ['Copies are ghosts.', 'Only the newest file counts. Older copies still open, but as ghosts, and the piece remembers seeing them.'],
   ['Pieces remember.', 'Every take, gift and return is written into the piece\'s own pixels and signed so it can\'t be faked. Memory is small, so the oldest moments fade.'],
-  ['Pieces wear out.', 'Every hand-off leaves a mark: scuffs, fading, frayed edges. A piece passed around a lot looks it.'],
+  ['Pieces wear out.', 'Every hand-off leaves a mark: scuffs, grime, chipped edges. Time away fades and yellows it. After ten or so owners a piece looks well loved.'],
 ];
 
 function showInfo() {

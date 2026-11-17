@@ -4,6 +4,7 @@ import { EVENT, SECRET_BYTES, type PieceEvent } from '../shared/payload.ts';
 import { readPiece, writePiece, memoryOf, READ_ERRORS, type PieceFile, type Memory } from '../shared/piece-file.ts';
 import { importKeys, randomBytes, sha256Hex, base64url, type Keys } from '../shared/crypto.ts';
 import { applyWear } from '../shared/wear.ts';
+import { pieceMask } from '../shared/shape.ts';
 
 export interface Env {
   PUZZLE: DurableObjectNamespace<Puzzle>;
@@ -156,6 +157,7 @@ export class Puzzle extends DurableObject<Env> {
       const row = this.row(id);
       const refusal = await this.refuseUnlessCurrent(row, file);
       if (refusal) return refusal;
+      this.age(file);
       const written = await this.rewrite(row, file, EVENT.return);
       await this.env.BUCKET.put(pieceKey(id), written.png);
       this.update(id, 'in', written.payload.seq, null);
@@ -171,6 +173,7 @@ export class Puzzle extends DurableObject<Env> {
       const row = this.row(id);
       const refusal = await this.refuseUnlessCurrent(row, file);
       if (refusal) return refusal;
+      this.age(file);
       const written = await this.rewrite(row, file, EVENT.gift);
       await this.env.BUCKET.put(pieceKey(id), written.png);
       const token = base64url(randomBytes(18));
@@ -218,12 +221,20 @@ export class Puzzle extends DurableObject<Env> {
   /** A piece changes hands: wear it, give it a new secret, and send it off. Its stored copy is deleted. */
   private async handOff(row: Row, file: PieceFile, type: number): Promise<Result<{ id: number; seq: number; png: Uint8Array }>> {
     const secret = randomBytes(SECRET_BYTES);
-    applyWear(file.rgba, file.width, file.height, file.payload.owners + 1);
+    applyWear(file.rgba, file.width, file.height, { handling: 1, days: 0 }, pieceMask(row.id));
     const written = await this.rewrite(row, file, type, { secret, owners: file.payload.owners + 1 });
     this.update(row.id, 'out', written.payload.seq, await sha256Hex(secret));
     // A leftover stored copy is harmless (stale seq, never served while out), so don't fail the hand-off over it.
     await this.env.BUCKET.delete(pieceKey(row.id)).catch(() => {});
     return ok({ id: row.id, seq: written.payload.seq, png: written.png });
+  }
+
+  /** A piece coming back in (returned or wrapped) has aged for as long as it was out. */
+  private age(file: PieceFile) {
+    const left = file.payload.events.findLast((e) => e.type === EVENT.take || e.type === EVENT.redeem);
+    if (!left) return;
+    const days = Math.max(0, now() - left.at) / 86400;
+    applyWear(file.rgba, file.width, file.height, { handling: 0, days }, pieceMask(file.payload.pieceId));
   }
 
   /** Append pending ghost sightings and the new event, bump seq, re-sign and embed. */

@@ -14,7 +14,7 @@ one big jigsaw puzzle, shared by everyone. anyone can take a piece out.
 
 **pieces remember.** every take, gift and return is written into the piece's own pixels, signed so it can't be faked. memory is small, so the oldest moments slowly fade.
 
-**pieces wear out.** every hand-off leaves a mark: scuffs, fading, creases, frayed edges. a piece that's been passed around a lot looks it.
+**pieces wear out.** every hand-off leaves a mark: scuffs, grimy edges, creases, little chips. time does too. the longer a piece stays out of the puzzle, the more it fades and yellows, and it might pick up a stain. after ten or so owners a piece looks well loved.
 
 **lose the file and the piece is gone.** there are no accounts and no backups. the spot stays empty forever.
 
@@ -66,7 +66,7 @@ wrapping a piece hands it back to the server and bumps its `seq`, so your file b
 
 ### wear
 
-wear is applied to the real pixels every time the piece is handed out: colours fade toward old paper, grime builds at the edges, scuffs and creases appear at milestone owners, edges fray and chip. the order is always read the record, add wear, then write the record. that way the wear can never damage the history. frayed pixels turn transparent and can't hold data anymore, so a well-loved piece also has less room to remember.
+wear is applied to the real pixels and comes in two kinds. handling happens every time a piece is handed to someone: grime builds where fingers hold the edges, the print rubs off at the edges, and scuffs, the odd crease and small chips appear. it's tuned so about ten hand-offs make a piece look well worn. age is added when a piece comes back in, either returned or wrapped as a gift, and depends on how long it was out. the print fades and yellows like an old photo (half-faded after a year away), and long stays can leave a stain or a peeled spot. the time comes from the signed record, so nobody can fake it. the order is always read the record, add wear, then write the record. that way the wear can never damage the history. frayed pixels turn transparent and can't hold data anymore, so a well-loved piece also has less room to remember.
 
 ### the board
 
