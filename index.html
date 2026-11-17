@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>the puzzle</title>
+  </head>
+  <body>
+    <canvas id="board"></canvas>
+    <header class="bar">
+      <div>
+        <h1>the puzzle</h1>
+        <span id="count"></span>
+        <button id="random" class="linklike">take a piece</button>
+        <button id="bring" class="linklike">bring one back</button>
+      </div>
+      <div><button id="info" class="linklike">what is this?</button></div>
+      <input type="file" id="upload" accept="image/png" hidden />
+    </header>
+    <aside id="panel" hidden></aside>
+    <div id="drop" hidden><div>Drop your piece here</div></div>
+    <div id="toast"></div>
+    <script type="module" src="/src/client/main.ts"></script>
+  </body>
+</html>
