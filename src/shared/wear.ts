@@ -9,10 +9,10 @@
 
 /** Bare cardboard, where the print has rubbed off. */
 const BOARD = [228, 218, 198];
-const GRIME_DEPTH = 6;
+const GRIME_DEPTH = 10;
 /** How far from the original outline pixels can fray or chip away entirely. */
 const FRAY_DEPTH = 2;
-const CHIP_DEPTH = 3;
+const CHIP_DEPTH = 5;
 
 /**
  * How much wear one event adds.
@@ -28,14 +28,16 @@ export interface Wear {
 
 /** Per hand-off. */
 const HANDLING = {
-  fade: 0.03,
-  grime: 0.05,
-  whiten: [0, 0.12, 0.06, 0.02],
-  fray: [0, 0.025, 0.006],
-  scuffs: 1.2,
-  creases: 0.12,
-  chips: 0.2,
-  peels: 0.05,
+  fade: 0.05,
+  /** The surface print rubs thin: contrast and saturation drain away. */
+  rub: 0.05,
+  grime: 0.1,
+  whiten: [0, 0.3, 0.2, 0.12, 0.06, 0.03],
+  fray: [0, 0.07, 0.025],
+  scuffs: 3,
+  creases: 0.3,
+  chips: 0.6,
+  peels: 0.15,
 };
 
 /** Per day out of the puzzle. */
@@ -117,9 +119,15 @@ export function applyWear(rgba: Uint8Array, w: number, h: number, wear: Wear, ma
   // and grime builds up where fingers hold the edges.
   const fade = 1 - (1 - over(HANDLING.fade, handling)) * 0.5 ** (days / AGE.fadeHalfLife);
   const grime = over(HANDLING.grime, handling);
+  const rub = over(HANDLING.rub, handling);
   for (let p = 0; p < w * h; p++) {
     const i = p * 4;
     if (rgba[i + 3] === 0 || !mask[p]) continue;
+    if (rub) {
+      const l = 0.299 * rgba[i] + 0.587 * rgba[i + 1] + 0.114 * rgba[i + 2];
+      const flat = 150 + (l - 150) * 0.55;
+      for (let c = 0; c < 3; c++) rgba[i + c] = clamp(Math.round(rgba[i + c] + (flat + (BOARD[c] - 213) * 0.5 - rgba[i + c]) * rub * 0.7));
+    }
     const r = rgba[i], g = rgba[i + 1], b = rgba[i + 2];
     const lum = 0.299 * r + 0.587 * g + 0.114 * b;
     const sepia = [lum * 1.04 + 8, lum * 0.97 + 4, lum * 0.82];
@@ -137,19 +145,22 @@ export function applyWear(rgba: Uint8Array, w: number, h: number, wear: Wear, ma
     const chance = HANDLING.whiten.map((c) => over(c, handling));
     for (let p = 0; p < w * h; p++) {
       const d = dist[p];
-      if (!d || d > 3 || rgba[p * 4 + 3] === 0) continue;
-      if (rand() < chance[d]) toward(rgba, p * 4, BOARD, 0.35 + rand() * 0.4);
+      if (!d || d >= chance.length || rgba[p * 4 + 3] === 0) continue;
+      if (rand() < chance[d]) toward(rgba, p * 4, BOARD, 0.5 + rand() * 0.45);
     }
   }
 
   // Scuffs: short rubbed lines where the print has worn thin.
   for (let n = count(HANDLING.scuffs * handling); n > 0; n--) {
     let x = rand() * w, y = rand() * h;
-    const a = rand() * Math.PI * 2, len = 5 + rand() * 14, t0 = 0.15 + rand() * 0.2;
+    const a = rand() * Math.PI * 2, len = 10 + rand() * 35, t0 = 0.25 + rand() * 0.3, thick = rand() < 0.5;
     for (let t = 0; t < len; t++, x += Math.cos(a), y += Math.sin(a)) {
       const px = Math.round(x), py = Math.round(y);
-      if (!visible(px, py) || !mask[py * w + px]) continue;
-      toward(rgba, (py * w + px) * 4, BOARD, t0 * (1 - t / len / 2));
+      for (const [ox, oy] of thick ? [[0, 0], [1, 0], [0, 1]] : [[0, 0]]) {
+        const qx = px + ox, qy = py + oy;
+        if (!visible(qx, qy) || !mask[qy * w + qx]) continue;
+        toward(rgba, (qy * w + qx) * 4, BOARD, t0 * (1 - t / len / 2) * (0.7 + rand() * 0.3));
+      }
     }
   }
 
@@ -174,7 +185,7 @@ export function applyWear(rgba: Uint8Array, w: number, h: number, wear: Wear, ma
 
   // Peels: a tiny patch of print lifts off the surface.
   for (let n = count(HANDLING.peels * handling + AGE.peels * days); n > 0; n--) {
-    const cx = w * (0.25 + rand() * 0.5), cy = h * (0.25 + rand() * 0.5), rad = 1.5 + rand() * 2.5;
+    const cx = w * (0.25 + rand() * 0.5), cy = h * (0.25 + rand() * 0.5), rad = 2 + rand() * 4;
     for (let y = Math.floor(cy - rad - 1); y <= cy + rad + 1; y++) {
       for (let x = Math.floor(cx - rad - 1); x <= cx + rad + 1; x++) {
         if (!visible(x, y) || !mask[y * w + x]) continue;
@@ -194,9 +205,9 @@ export function applyWear(rgba: Uint8Array, w: number, h: number, wear: Wear, ma
         const i = (y * w + x) * 4;
         if (rgba[i + 3] === 0 || !mask[y * w + x]) continue;
         const s = (x - cx) * nx + (y - cy) * ny;
-        if (Math.abs(s) < 0.6) toward(rgba, i, BOARD, 0.22);
-        else if (s >= 0.6 && s < 2.5) shade(rgba, i, -9 * (1 - (s - 0.6) / 1.9));
-        else if (s <= -0.6 && s > -1.6) shade(rgba, i, 4);
+        if (Math.abs(s) < 0.8) toward(rgba, i, BOARD, 0.4 + rand() * 0.25);
+        else if (s >= 0.8 && s < 3.5) shade(rgba, i, -18 * (1 - (s - 0.8) / 2.7));
+        else if (s <= -0.8 && s > -2) shade(rgba, i, 8);
       }
     }
   }
@@ -221,7 +232,7 @@ export function applyWear(rgba: Uint8Array, w: number, h: number, wear: Wear, ma
     for (let p = 0; p < w * h; p++) if (dist[p] === 1) edge.push(p);
     for (let n = chips; n > 0 && edge.length; n--) {
       const p = edge[Math.floor(rand() * edge.length)];
-      const ex = p % w, ey = (p - ex) / w, r = 1.5 + rand() * 2;
+      const ex = p % w, ey = (p - ex) / w, r = 2 + rand() * 3.5;
       for (let y = Math.floor(ey - r - 2); y <= ey + r + 2; y++) {
         for (let x = Math.floor(ex - r - 2); x <= ex + r + 2; x++) {
           if (x < 0 || y < 0 || x >= w || y >= h || !mask[y * w + x]) continue;
