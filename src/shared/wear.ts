@@ -31,12 +31,12 @@ const HANDLING = {
   fade: 0.05,
   /** The surface print rubs thin: contrast and saturation drain away. */
   rub: 0.05,
-  grime: 0.1,
-  whiten: [0, 0.3, 0.2, 0.12, 0.06, 0.03],
+  grime: 0.07,
+  whiten: [0, 0.25, 0.1, 0.04],
   fray: [0, 0.07, 0.025],
-  scuffs: 3,
-  creases: 0.3,
-  chips: 0.6,
+  scuffs: 2,
+  creases: 0.1,
+  chips: 0.3,
   peels: 0.15,
 };
 
@@ -87,6 +87,28 @@ function insideDistance(mask: Uint8Array, w: number, h: number, cap: number): Ui
   // Anything deeper than the cap is simply "far from the edge".
   for (let p = 0; p < w * h; p++) if (mask[p] && !dist[p]) dist[p] = cap + 1;
   return dist;
+}
+
+/** Smooth value noise in [0, 1], varying over roughly `cell` pixels. */
+function noise(w: number, h: number, cell: number, rand: Rand): Float32Array {
+  const gw = Math.ceil(w / cell) + 2, gh = Math.ceil(h / cell) + 2;
+  const grid = Float32Array.from({ length: gw * gh }, () => rand());
+  const out = new Float32Array(w * h);
+  for (let y = 0; y < h; y++) {
+    const gy = y / cell, y0 = Math.floor(gy), ty = smoothstep(0, 1, gy - y0);
+    for (let x = 0; x < w; x++) {
+      const gx = x / cell, x0 = Math.floor(gx), tx = smoothstep(0, 1, gx - x0);
+      const a = grid[y0 * gw + x0], b = grid[y0 * gw + x0 + 1];
+      const c = grid[(y0 + 1) * gw + x0], d = grid[(y0 + 1) * gw + x0 + 1];
+      out[y * w + x] = (a + (b - a) * tx) * (1 - ty) + (c + (d - c) * tx) * ty;
+    }
+  }
+  return out;
+}
+
+function smoothstep(a: number, b: number, v: number) {
+  const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
+  return t * t * (3 - 2 * t);
 }
 
 /** Blend a pixel toward a colour. */
@@ -140,20 +162,21 @@ export function applyWear(rgba: Uint8Array, w: number, h: number, wear: Wear, ma
     }
   }
 
-  // Edge whitening: the print rubs off the edges first, showing the bare board.
+  // Edge whitening: the print rubs off the edges in soft patches, showing the bare board.
   if (handling) {
-    const chance = HANDLING.whiten.map((c) => over(c, handling));
+    const amount = HANDLING.whiten.map((c) => over(c, handling));
+    const patches = noise(w, h, 7, rand);
     for (let p = 0; p < w * h; p++) {
       const d = dist[p];
-      if (!d || d >= chance.length || rgba[p * 4 + 3] === 0) continue;
-      if (rand() < chance[d]) toward(rgba, p * 4, BOARD, 0.5 + rand() * 0.45);
+      if (!d || d >= amount.length || rgba[p * 4 + 3] === 0) continue;
+      toward(rgba, p * 4, BOARD, Math.min(1, amount[d] * 1.8 * smoothstep(0.45, 0.85, patches[p])));
     }
   }
 
   // Scuffs: short rubbed lines where the print has worn thin.
   for (let n = count(HANDLING.scuffs * handling); n > 0; n--) {
     let x = rand() * w, y = rand() * h;
-    const a = rand() * Math.PI * 2, len = 10 + rand() * 35, t0 = 0.25 + rand() * 0.3, thick = rand() < 0.5;
+    const a = rand() * Math.PI * 2, len = 8 + rand() * 22, t0 = 0.15 + rand() * 0.25, thick = rand() < 0.3;
     for (let t = 0; t < len; t++, x += Math.cos(a), y += Math.sin(a)) {
       const px = Math.round(x), py = Math.round(y);
       for (const [ox, oy] of thick ? [[0, 0], [1, 0], [0, 1]] : [[0, 0]]) {
@@ -205,23 +228,24 @@ export function applyWear(rgba: Uint8Array, w: number, h: number, wear: Wear, ma
         const i = (y * w + x) * 4;
         if (rgba[i + 3] === 0 || !mask[y * w + x]) continue;
         const s = (x - cx) * nx + (y - cy) * ny;
-        if (Math.abs(s) < 0.8) toward(rgba, i, BOARD, 0.4 + rand() * 0.25);
-        else if (s >= 0.8 && s < 3.5) shade(rgba, i, -18 * (1 - (s - 0.8) / 2.7));
-        else if (s <= -0.8 && s > -2) shade(rgba, i, 8);
+        if (Math.abs(s) < 0.6) toward(rgba, i, BOARD, 0.2);
+        else if (s >= 0.6 && s < 3.5) shade(rgba, i, -14 * (1 - (s - 0.6) / 2.9));
+        else if (s <= -0.6 && s > -2.5) shade(rgba, i, 7 * (1 - (-s - 0.6) / 1.9));
       }
     }
   }
 
-  // Fraying: the outermost pixels slowly come away, leaving a slightly ragged edge.
+  // Fraying: stretches of the outermost pixels soften and thin out, leaving a gently ragged edge.
   if (handling) {
-    const chance = HANDLING.fray.map((c) => over(c, handling));
+    const amount = HANDLING.fray.map((c) => over(c, handling));
+    const stretches = noise(w, h, 9, rand);
     for (let p = 0; p < w * h; p++) {
       const d = dist[p];
       if (!d || d > FRAY_DEPTH || rgba[p * 4 + 3] === 0) continue;
-      if (rand() < chance[d]) {
-        rgba[p * 4 + 3] = rand() < 0.4 ? 0 : 120 + Math.floor(rand() * 120);
-        toward(rgba, p * 4, BOARD, 0.6);
-      }
+      const k = Math.min(1, amount[d] * 3 * smoothstep(0.4, 0.85, stretches[p]));
+      if (!k) continue;
+      rgba[p * 4 + 3] = Math.round(rgba[p * 4 + 3] * (1 - k * 0.7));
+      toward(rgba, p * 4, BOARD, k * 0.6);
     }
   }
 
@@ -232,7 +256,7 @@ export function applyWear(rgba: Uint8Array, w: number, h: number, wear: Wear, ma
     for (let p = 0; p < w * h; p++) if (dist[p] === 1) edge.push(p);
     for (let n = chips; n > 0 && edge.length; n--) {
       const p = edge[Math.floor(rand() * edge.length)];
-      const ex = p % w, ey = (p - ex) / w, r = 2 + rand() * 3.5;
+      const ex = p % w, ey = (p - ex) / w, r = 1.5 + rand() * 2;
       for (let y = Math.floor(ey - r - 2); y <= ey + r + 2; y++) {
         for (let x = Math.floor(ex - r - 2); x <= ex + r + 2; x++) {
           if (x < 0 || y < 0 || x >= w || y >= h || !mask[y * w + x]) continue;
