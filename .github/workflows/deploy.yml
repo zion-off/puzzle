@@ -11,7 +11,8 @@ permissions:
 
 jobs:
   deploy:
-    uses: zion-off/workflows/.github/workflows/deploy.yml@main
+    uses: zion-off/workflows/.github/workflows/deploy.yml@split-build
     with:
       node-version: "26"
       build: npm install -g pnpm@11.5.0 && pnpm install --frozen-lockfile && pnpm build
+      build-output: dist
