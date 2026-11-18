@@ -81,6 +81,7 @@ export class Board {
   private tweens = new Set<(now: number) => boolean>();
   private floating: { sprite: Sprite; stop: () => void } | null = null;
   private cam = { x: WIDTH / 2, y: HEIGHT / 2, z: 0.3 };
+  private camMoved = false;
   private size = { w: 0, h: 0, dpr: 1 };
   private hover = -1;
   private selected = -1;
@@ -101,7 +102,12 @@ export class Board {
       p.closePath();
       this.paths.push(p);
     }
-    new ResizeObserver(() => this.resize()).observe(canvas);
+    // Safari can run this before the stylesheet sizes the canvas, so keep
+    // re-fitting on resize until the camera has been moved.
+    new ResizeObserver(() => {
+      this.resize();
+      if (!this.camMoved) this.cam = { x: WIDTH / 2, y: HEIGHT / 2, z: this.fitZoom() };
+    }).observe(canvas);
     this.resize();
     this.cam.z = this.fitZoom();
     this.bindInput();
@@ -320,6 +326,7 @@ export class Board {
   async flyTo(id: number, duration = 1100) {
     const { cx, cy } = this.centre(id);
     const z1 = Math.min(3, Math.max(this.fitZoom(), Math.min(this.size.w, this.size.h) * 0.32 / PIECE_SIZE));
+    this.camMoved = true;
     const from = { ...this.cam };
     const dist = Math.hypot(cx - from.x, cy - from.y) / Math.max(WIDTH, HEIGHT);
     const dip = Math.min(1.2, dist * 2.5);
@@ -679,6 +686,7 @@ export class Board {
   }
 
   private zoomAt(sx: number, sy: number, factor: number) {
+    this.camMoved = true;
     const before = this.toBoard(sx, sy);
     this.cam.z = Math.min(4, Math.max(this.fitZoom() * 0.6, this.cam.z * factor));
     const after = this.toBoard(sx, sy);
@@ -727,6 +735,7 @@ export class Board {
       if (drag) {
         const dx = e.clientX - prev.x, dy = e.clientY - prev.y;
         if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 5) drag.moved = true;
+        this.camMoved = true;
         this.cam.x -= dx / this.cam.z;
         this.cam.y -= dy / this.cam.z;
         c.style.cursor = 'grabbing';
@@ -762,6 +771,7 @@ export class Board {
       if (e.ctrlKey || e.metaKey || Math.abs(e.deltaY) > 40 && !e.deltaX) {
         this.zoomAt(e.offsetX, e.offsetY, Math.exp(-e.deltaY * scale * (e.ctrlKey ? 0.01 : 0.0015)));
       } else {
+        this.camMoved = true;
         this.cam.x += (e.deltaX * scale) / this.cam.z;
         this.cam.y += (e.deltaY * scale) / this.cam.z;
         this.invalidate();
