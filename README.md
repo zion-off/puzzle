@@ -12,7 +12,7 @@ one big jigsaw puzzle, shared by everyone. anyone can take a piece out.
 
 **copies are ghosts.** you can copy the file, but only the newest one counts. older copies still open, as ghosts, and the piece remembers seeing them.
 
-**pieces remember.** every take, gift and return is written into the piece's own pixels, signed so it can't be faked.
+**pieces remember.** every take, gift and return is written into the piece's own pixels, cryptographically signed so it can't be faked.
 
 **pieces wear out.** like real cardboard. every hand-off rubs a little print off the edges, knob tips and corners first, and now and then the print peels or the piece gets bent. time does its part too: the longer a piece stays out of the puzzle, the more it yellows, and it might pick up a stain. after ten or so owners a piece looks well loved.
 

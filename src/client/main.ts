@@ -41,7 +41,7 @@ const INFO: [string, string][] = [
   ['Bring it back.', 'Drop your PNG on this page any time. We\'ll show where it belongs and you can put it back in, or keep holding it.'],
   ['Give it away.', 'Wrap the piece as a gift and send the link. Whoever opens it first gets the piece. Your old file becomes a keepsake.'],
   ['Copies are ghosts.', 'Only the newest file counts. Older copies still open, but as ghosts, and the piece remembers seeing them.'],
-  ['Pieces remember.', 'Every take, gift and return is written into the piece\'s own pixels and signed so it can\'t be faked.'],
+  ['Pieces remember.', 'Every take, gift and return is written into the piece\'s own pixels and cryptographically signed so it can\'t be faked.'],
   ['Pieces wear out.', 'Like real cardboard: every hand-off rubs print off the edges and tips, and sometimes it peels or creases. Time away yellows it. After ten or so owners a piece looks well loved.'],
 ];
 
