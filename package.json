@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "deploy": "vite build && wrangler deploy",
     "keygen": "node scripts/keygen.ts",
     "seed": "node scripts/seed.ts",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.worker.json",

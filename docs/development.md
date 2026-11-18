@@ -25,15 +25,12 @@ sips -s format jpeg -s formatOptions 88 art/master.png --out public/master.jpg
 
 ## deploy (cloudflare)
 
-one-time setup:
+every push to `main` deploys: `.github/workflows/deploy.yml` builds with `pnpm build`, then runs the terraform in `infra/main.tf`, which owns the worker, its durable object, static assets and the r2 bucket. `wrangler.jsonc` only configures local dev and the build; production comes from `infra/main.tf`, so a binding change goes in both.
+
+`SIGNING_KEY` and `ADMIN_TOKEN` come from `.prod.vars` (`pnpm keygen --prod`, back it up somewhere safe) and live in aws ssm as `/deploy/puzzle/TF_VAR_signing_key` and `/deploy/puzzle/TF_VAR_admin_token`. after the first deploy, fill the puzzle once:
 
 ```sh
-pnpm wrangler login
-pnpm wrangler r2 bucket create puzzle
-pnpm keygen --prod                        # writes .prod.vars, back it up somewhere safe
-pnpm run deploy                           # first deploy (not `pnpm deploy`, that's a pnpm built-in)
-pnpm wrangler secret bulk .prod.vars      # SIGNING_KEY + ADMIN_TOKEN
-pnpm seed https://puzzle.<you>.workers.dev
+pnpm seed https://puzzle.zzzzion.com
 ```
 
 once real people hold pieces, never change `SIGNING_KEY`, the picture, the grid, or `PUZZLE.seed`: every piece in the world would stop matching.

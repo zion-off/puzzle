@@ -1,0 +1,17 @@
+name: deploy
+
+on:
+  push:
+    branches: [main] # must be the branch the deploy role trusts
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # required for OIDC authentication to AWS
+
+jobs:
+  deploy:
+    uses: zion-off/workflows/.github/workflows/deploy.yml@main
+    with:
+      node-version: "26"
+      build: npm install -g pnpm@11.5.0 && pnpm install --frozen-lockfile && pnpm build

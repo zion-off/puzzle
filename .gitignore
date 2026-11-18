@@ -4,4 +4,6 @@ dist
 .dev.vars
 .prod.vars
 .DS_Store
-wrangler.jsonc
+infra/.terraform
+*.tfstate*
+tfplan
