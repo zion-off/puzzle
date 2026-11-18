@@ -122,8 +122,7 @@ body.busy button { opacity: 0.5; pointer-events: none; }
 .history time { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .history .ev-5 b { font-style: italic; font-weight: normal; }
 .history .ev-3 b, .history .ev-4 b { color: var(--link); }
-.history .fading { opacity: 0.4; }
-.history .forgotten { color: var(--muted); font-style: italic; justify-content: center; }
+.history .note { color: var(--muted); font-style: italic; justify-content: center; }
 
 #drop {
   position: fixed;

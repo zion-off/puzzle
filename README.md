@@ -12,7 +12,7 @@ one big jigsaw puzzle, shared by everyone. anyone can take a piece out.
 
 **copies are ghosts.** you can copy the file, but only the newest one counts. older copies still open, as ghosts, and the piece remembers seeing them.
 
-**pieces remember.** every take, gift and return is written into the piece's own pixels, signed so it can't be faked. memory is small, so the oldest moments slowly fade.
+**pieces remember.** every take, gift and return is written into the piece's own pixels, signed so it can't be faked.
 
 **pieces wear out.** like real cardboard. every hand-off rubs a little print off the edges, knob tips and corners first, and now and then the print peels or the piece gets bent. time does its part too: the longer a piece stays out of the puzzle, the more it yellows, and it might pick up a stain. after ten or so owners a piece looks well loved.
 
@@ -35,9 +35,7 @@ no names, emails or ip addresses. an owner is just a moment in time.
 
 ### where it hides
 
-the record is written into the least significant bit of the red, green and blue channels of every fully opaque pixel, row by row. changing the last bit of a colour value shifts it by 1 out of 255, which you can't see. a fresh piece has room for about 5,900 bytes, or roughly a thousand events.
-
-when the record no longer fits, the oldest events are dropped first. the piece slowly forgets where it's been.
+the record is written into the least significant bit of the red, green and blue channels of every fully opaque pixel, row by row. changing the last bit of a colour value shifts it by 1 out of 255, which you can't see. a fresh piece has room for about 5,800 bytes, enough for over a thousand events, or more than 500 owners.
 
 ### how it's signed
 

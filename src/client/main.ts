@@ -39,7 +39,7 @@ const INFO: [string, string][] = [
   ['Bring it back.', 'Drop your PNG on this page any time. We\'ll show where it belongs and you can put it back in, or keep holding it.'],
   ['Give it away.', 'Wrap the piece as a gift and send the link. Whoever opens it first gets the piece. Your old file becomes a keepsake.'],
   ['Copies are ghosts.', 'Only the newest file counts. Older copies still open, but as ghosts, and the piece remembers seeing them.'],
-  ['Pieces remember.', 'Every take, gift and return is written into the piece\'s own pixels and signed so it can\'t be faked. Memory is small, so the oldest moments fade.'],
+  ['Pieces remember.', 'Every take, gift and return is written into the piece\'s own pixels and signed so it can\'t be faked.'],
   ['Pieces wear out.', 'Like real cardboard: every hand-off rubs print off the edges and tips, and sometimes it peels or creases. Time away yellows it. After ten or so owners a piece looks well loved.'],
 ];
 
@@ -142,17 +142,13 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 function memoryView(m: Memory) {
   const pct = Math.min(100, Math.round((m.used / m.capacity) * 100));
-  const forgotten = m.total - m.events.length;
   const list = el('ol', { class: 'history' });
-  const events = [...m.events].reverse();
-  events.forEach((e, i) => {
-    const fading = forgotten > 0 && i >= events.length - 3;
-    list.append(el('li', { class: `ev ev-${e.type}${fading ? ' fading' : ''}` }, el('b', {}, LABELS[e.type] ?? 'Something happened'), el('time', {}, when(e.at))));
-  });
-  if (forgotten > 0) list.append(el('li', { class: 'forgotten' }, `…and ${plural(forgotten, 'older moment')} it no longer remembers`));
-  if (!m.events.length && !forgotten) list.append(el('li', { class: 'forgotten' }, 'Nothing yet. It has never left the puzzle.'));
+  for (const e of [...m.events].reverse()) {
+    list.append(el('li', { class: `ev ev-${e.type}` }, el('b', {}, LABELS[e.type] ?? 'Something happened'), el('time', {}, when(e.at))));
+  }
+  if (!m.total) list.append(el('li', { class: 'note' }, 'Nothing yet. It has never left the puzzle.'));
   return el('section', { class: 'memory' },
-    el('div', { class: 'stats' }, `${plural(m.owners, 'owner')} · remembers ${m.events.length} of ${plural(m.total, 'moment')}`),
+    el('div', { class: 'stats' }, `${plural(m.owners, 'owner')} · ${plural(m.total, 'moment')}`),
     el('div', { class: 'meter', title: `${m.used} of ${m.capacity} bytes of memory used` }, el('span', { style: `width:${pct}%` })),
     el('div', { class: 'meter-label' }, `memory ${pct}% full`),
     list,

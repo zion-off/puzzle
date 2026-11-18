@@ -69,7 +69,7 @@ test('editing the pixels or the history breaks the signature', async () => {
   assert.deepEqual(await readPiece(png, other), { error: 'bad-signature' });
 });
 
-test('when memory is full the oldest events are forgotten', async () => {
+test('a record too big to fit still writes, keeping the newest events', async () => {
   const keys = await testKeys();
   const rgba = cutPiece(master, WIDTH, HEIGHT, 3);
   const events = Array.from({ length: 5000 }, (_, i) => ({ type: EVENT.take, at: i }));

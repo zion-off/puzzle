@@ -70,8 +70,8 @@ export async function readPiece(bytes: Uint8Array, keys: Keys): Promise<PieceFil
 }
 
 /**
- * Sign and hide the payload in the pixels (mutates rgba). If memory is full,
- * the oldest events are forgotten. Returns the PNG and what actually fit.
+ * Sign and hide the payload in the pixels (mutates rgba). Safety net: if the
+ * record ever outgrows the pixels, the oldest events are trimmed. Returns the PNG and what actually fit.
  */
 export async function writePiece(file: Omit<PieceFile, 'payload'>, payload: Payload, keys: Keys) {
   const capacity = capacityBytes(file.rgba);

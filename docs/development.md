@@ -9,7 +9,7 @@ pnpm dev           # http://localhost:5173
 pnpm seed          # in another terminal: cuts, signs and uploads every piece
 ```
 
-`pnpm test` checks the core (tiling, wear cycle, tamper detection, forgetting). `pnpm typecheck` covers the client and the worker.
+`pnpm test` checks the core (tiling, wear cycle, tamper detection, overflow). `pnpm typecheck` covers the client and the worker.
 
 ## the picture
 

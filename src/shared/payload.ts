@@ -6,7 +6,7 @@
  *
  * seq     – number of state changes so far; a file is only live if it matches the server.
  * owners  – number of people who have held the piece.
- * total   – number of events ever; total − count = moments the piece has forgotten.
+ * total   – number of events ever; only differs from count if a record ever overflowed.
  * secret  – proves the holder of this exact file is the current holder (zeros while in the puzzle).
  */
 
