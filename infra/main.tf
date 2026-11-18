@@ -68,10 +68,10 @@ resource "cloudflare_workers_script" "puzzle" {
     { name = "ADMIN_TOKEN", type = "secret_text", text = var.admin_token },
   ]
 
-  migrations = {
-    new_tag            = "v1"
-    new_sqlite_classes = ["Puzzle"]
-  }
+  # Durable Object migrations are sent only when there's a new one, and only
+  # that one: v1 (new_sqlite_classes = ["Puzzle"]) has been applied, so the next
+  # would be { old_tag = "v1", new_tag = "v2", ... }. Resending an applied tag
+  # fails with "migration tag precondition failed".
 
   # Cloudflare's defaults, spelled out so plans stay empty.
   observability = {
