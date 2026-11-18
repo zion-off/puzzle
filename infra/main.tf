@@ -73,7 +73,20 @@ resource "cloudflare_workers_script" "puzzle" {
     new_sqlite_classes = ["Puzzle"]
   }
 
+  # Cloudflare's defaults, spelled out so plans stay empty.
   observability = {
-    enabled = true
+    enabled            = true
+    head_sampling_rate = 1
+    logs = {
+      enabled            = true
+      head_sampling_rate = 1
+      invocation_logs    = true
+      persist            = true
+    }
+    traces = {
+      enabled            = false
+      head_sampling_rate = 1
+      persist            = true
+    }
   }
 }
