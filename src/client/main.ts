@@ -30,6 +30,8 @@ const $ = <T extends HTMLElement>(sel: string) => document.querySelector(sel) as
 const board = new Board($<HTMLCanvasElement>('#board'));
 const panel = $<HTMLElement>('#panel');
 let busy = false;
+// bumped around every action, so a poll that started before one can't undo it
+let epoch = 0;
 
 // ---------- info ----------
 
@@ -158,6 +160,7 @@ function memoryView(m: Memory) {
 async function guard(fn: () => Promise<void>) {
   if (busy) return;
   busy = true;
+  epoch++;
   document.body.classList.add('busy');
   try {
     await fn();
@@ -165,7 +168,9 @@ async function guard(fn: () => Promise<void>) {
     toast(e instanceof Error ? e.message : String(e));
   } finally {
     busy = false;
+    epoch++;
     document.body.classList.remove('busy');
+    poll();
   }
 }
 
@@ -211,7 +216,6 @@ function take(id?: number) {
       el('p', {}, `It just downloaded as piece-${got}.png. The file is the piece. Keep it safe: if you lose it, this spot stays empty forever.`),
       el('p', { class: 'muted' }, "Come back any time and drop it here to see where it belongs. You can put it back, or wrap it as a gift for someone. If you send the file itself, any copies are ghosts, and whoever comes back first wins."),
     );
-    poll();
   });
 }
 
@@ -266,7 +270,6 @@ function putBack(file: Blob, img: ImageBitmap, id: number) {
       panel.hidden = true;
       await board.animateReturn(id, img, res.seq);
       showPanel(el('h2', {}, `Piece #${id} is home`), el('p', {}, 'Back where it belongs, a little more worn than before. Someone else can take it now.'), memoryView(res.memory));
-      poll();
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
         toast('Too late. Another copy got there first.');
@@ -283,7 +286,6 @@ async function bringBackAfterRace(file: Blob) {
   const img = await createImageBitmap(file);
   await board.showFloating(info.pieceId, img, true);
   showHeld(info, file, img);
-  poll();
 }
 
 function confirmGift(file: Blob, img: ImageBitmap, id: number) {
@@ -314,7 +316,6 @@ function wrap(file: Blob, img: ImageBitmap, id: number) {
       }, 'primary')),
       el('p', { class: 'muted' }, 'Your file is a keepsake now. It still knows where it belongs, but it can no longer be put back.'),
     );
-    poll();
   });
 }
 
@@ -349,15 +350,16 @@ function unwrap(token: string) {
       el('p', {}, `It just downloaded as piece-${id}.png. The file is the piece, so keep it safe.`),
       memoryView(info),
     );
-    poll();
   });
 }
 
 // ---------- wiring ----------
 
 async function poll() {
+  const started = epoch;
   try {
     const s = await api<{ states: string; seqs: number[] }>('/api/state');
+    if (busy || started !== epoch) return;
     board.setState(s.states, s.seqs);
     const inside = [...s.states].filter((c) => c === 'i').length;
     $('#count').textContent = `${inside}/${PIECE_COUNT}`;

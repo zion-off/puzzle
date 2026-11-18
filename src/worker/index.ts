@@ -32,7 +32,7 @@ async function upload(req: Request): Promise<Uint8Array | Response> {
 }
 
 export default {
-  async fetch(req, env, ctx): Promise<Response> {
+  async fetch(req, env): Promise<Response> {
     const url = new URL(req.url);
     const path = url.pathname;
     const method = req.method;
@@ -40,12 +40,7 @@ export default {
     let m: RegExpMatchArray | null;
 
     if (path === '/api/state' && method === 'GET') {
-      const cache = caches.default;
-      const hit = await cache.match(req);
-      if (hit) return hit;
-      const res = json(await puzzle.getState(), 200, { 'cache-control': 'public, max-age=2' });
-      ctx.waitUntil(cache.put(req, res.clone()));
-      return res;
+      return json(await puzzle.getState(), 200, { 'cache-control': 'no-store' });
     }
 
     if ((m = path.match(/^\/api\/piece\/(\d+)\.png$/)) && method === 'GET') {
